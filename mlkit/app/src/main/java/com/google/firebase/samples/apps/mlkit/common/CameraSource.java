@@ -163,6 +163,7 @@ public class CameraSource {
     }
 
     camera = createCamera();
+    camera.getParameters().setZoom(camera.getParameters().getMaxZoom());
     dummySurfaceTexture = new SurfaceTexture(DUMMY_TEXTURE_NAME);
     camera.setPreviewTexture(dummySurfaceTexture);
     usingSurfaceTexture = true;
@@ -410,7 +411,8 @@ public class CameraSource {
     SizePair(
         Camera.Size previewSize,
         @Nullable Camera.Size pictureSize) {
-      preview = new Size(previewSize.width, previewSize.height);
+      //preview = new Size(previewSize.width, previewSize.height);
+      preview = new Size(480, 480);
       picture = pictureSize != null ? new Size(pictureSize.width, pictureSize.height) : null;
     }
 
@@ -715,7 +717,7 @@ public class CameraSource {
 
         try {
           synchronized (processorLock) {
-            Log.d(TAG, "Process an image");
+            //Log.d(TAG, "Process an image");
             frameProcessor.process(
                 data,
                 new FrameMetadata.Builder()

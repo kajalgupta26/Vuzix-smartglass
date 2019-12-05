@@ -13,21 +13,30 @@
 // limitations under the License.
 package com.google.firebase.samples.apps.mlkit.java;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
+import android.widget.ScrollView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -36,6 +45,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 
 import com.google.android.gms.common.annotation.KeepName;
 import com.google.firebase.ml.vision.objects.FirebaseVisionObjectDetectorOptions;
@@ -83,13 +93,31 @@ public final class LivePreviewActivity extends AppCompatActivity
     private CameraSource cameraSource = null;
     private CameraSourcePreview preview;
     private GraphicOverlay graphicOverlay;
-    private String selectedModel = FACE_CONTOUR;
+    private String selectedModel = FACE_DETECTION;
 
     @Override
+    protected void onStart() {
+        // Prepare Cloud Speech API
+        getApplicationContext().bindService(new Intent(this, SpeechService.class), mServiceConnection, BIND_AUTO_CREATE);
+        super.onStart();
+
+    }
+
+        @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_live_preview);
+        getApplicationContext().bindService(new Intent(this, SpeechService.class), mServiceConnection, BIND_AUTO_CREATE);
+
+        final Resources resources = getResources();
+        final Resources.Theme theme = getTheme();
+        mColorHearing = ResourcesCompat.getColor(resources, R.color.status_hearing, theme);
+        mColorNotHearing = ResourcesCompat.getColor(resources, R.color.status_not_hearing, theme);
+
+        //mStatus = (TextView) findViewById(R.id.status);
+        mText = (TextView) findViewById(R.id.listeningtext);
+        mScrollView = (ScrollView) findViewById(R.id.scrollview);
 
         preview = findViewById(R.id.firePreview);
         if (preview == null) {
@@ -112,23 +140,24 @@ public final class LivePreviewActivity extends AppCompatActivity
         options.add(CLASSIFICATION_QUANT);
         options.add(CLASSIFICATION_FLOAT);
         // Creating adapter for spinner
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, R.layout.spinner_style,
-                options);
-        // Drop down layout style - list view with radio button
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // attaching data adapter to spinner
-        spinner.setAdapter(dataAdapter);
-        spinner.setOnItemSelectedListener(this);
+//        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, R.layout.spinner_style,
+//                options);
+//        // Drop down layout style - list view with radio button
+//        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//        // attaching data adapter to spinner
+//        spinner.setAdapter(dataAdapter);
+//        spinner.setOnItemSelectedListener(this);
 
-        ToggleButton facingSwitch = findViewById(R.id.facingSwitch);
-        facingSwitch.setOnCheckedChangeListener(this);
+        //ToggleButton facingSwitch = findViewById(R.id.facingSwitch);
+        //facingSwitch.setOnCheckedChangeListener(this);
         // Hide the toggle button if there is only 1 camera
-        if (Camera.getNumberOfCameras() == 1) {
-            facingSwitch.setVisibility(View.GONE);
-        }
+//        if (Camera.getNumberOfCameras() == 1) {
+//            facingSwitch.setVisibility(View.GONE);
+//        }
 
         if (allPermissionsGranted()) {
             createCameraSource(selectedModel);
+            startVoiceRecorder();
         } else {
             getRuntimePermissions();
         }
@@ -312,11 +341,11 @@ public final class LivePreviewActivity extends AppCompatActivity
     }
 
     private boolean allPermissionsGranted() {
-        for (String permission : getRequiredPermissions()) {
-            if (!isPermissionGranted(this, permission)) {
-                return false;
-            }
-        }
+//        for (String permission : getRequiredPermissions()) {
+//            if (!isPermissionGranted(this, permission)) {
+//                return false;
+//            }
+//        }
         return true;
     }
 
@@ -340,6 +369,7 @@ public final class LivePreviewActivity extends AppCompatActivity
         Log.i(TAG, "Permission granted!");
         if (allPermissionsGranted()) {
             createCameraSource(selectedModel);
+            startVoiceRecorder();
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
@@ -353,4 +383,128 @@ public final class LivePreviewActivity extends AppCompatActivity
         Log.i(TAG, "Permission NOT granted: " + permission);
         return false;
     }
+
+    // speech
+
+    @Override
+    protected void onStop() {
+        // Stop listening to voice
+        stopVoiceRecorder();
+
+        // Stop Cloud Speech API
+        mSpeechService.removeListener(mSpeechServiceListener);
+        unbindService(mServiceConnection);
+        mSpeechService = null;
+
+        super.onStop();
+    }
+
+    private void startVoiceRecorder() {
+        if (mVoiceRecorder != null) {
+            mVoiceRecorder.stop();
+        }
+        mVoiceRecorder = new VoiceRecorder(mVoiceCallback);
+        mVoiceRecorder.start();
+    }
+
+    private void stopVoiceRecorder() {
+        if (mVoiceRecorder != null) {
+            mVoiceRecorder.stop();
+            mVoiceRecorder = null;
+        }
+    }
+
+    private void showStatus(final boolean hearingVoice) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mStatus.setTextColor(hearingVoice ? mColorHearing : mColorNotHearing);
+            }
+        });
+    }
+
+    private final SpeechService.Listener mSpeechServiceListener =
+            new SpeechService.Listener() {
+                @Override
+                public void onSpeechRecognized(final String text, final boolean isFinal) {
+                    if (isFinal) {
+                        mVoiceRecorder.dismiss();
+                    }
+                    if (mText != null && !TextUtils.isEmpty(text)) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (isFinal) {
+                                    mText.setText(null);
+//                                    mAdapter.addResult(text);
+//                                    mRecyclerView.smoothScrollToPosition(0);
+                                } else {
+                                    mText.setText(text);
+                                    mScrollView.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mScrollView.fullScroll(ScrollView.FOCUS_DOWN);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+            };
+
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder binder) {
+            mSpeechService = SpeechService.from(binder);
+            mSpeechService.addListener(mSpeechServiceListener);
+            //mStatus.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            mSpeechService = null;
+        }
+
+    };
+
+    private final VoiceRecorder.Callback mVoiceCallback = new VoiceRecorder.Callback() {
+
+        @Override
+        public void onVoiceStart() {
+            //showStatus(true);
+            if (mSpeechService != null) {
+                mSpeechService.startRecognizing(mVoiceRecorder.getSampleRate());
+            }
+        }
+
+        @Override
+        public void onVoice(byte[] data, int size) {
+            if (mSpeechService != null) {
+                mSpeechService.recognize(data, size);
+            }
+        }
+
+        @Override
+        public void onVoiceEnd() {
+            //showStatus(false);
+            if (mSpeechService != null) {
+                mSpeechService.finishRecognizing();
+            }
+        }
+
+    };
+
+    private int mColorHearing;
+    private int mColorNotHearing;
+
+    // View references
+    private TextView mStatus;
+    private TextView mText;
+    private ScrollView mScrollView;
+
+    private SpeechService mSpeechService;
+
+    private VoiceRecorder mVoiceRecorder;
 }

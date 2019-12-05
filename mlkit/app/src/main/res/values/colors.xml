@@ -11,4 +11,10 @@
     <color name="white">#FFFFFF</color>
     <color name="blue">#4286f4</color>
     <color name="red">#f44242</color>
+    <color name="primary">#4CAF50</color>
+    <color name="primary_dark">#388E3C</color>
+    <color name="accent">#536DFE</color>
+
+    <color name="status_hearing">@color/hud_green</color>
+    <color name="status_not_hearing">@color/hud_dark_gray</color>
 </resources>

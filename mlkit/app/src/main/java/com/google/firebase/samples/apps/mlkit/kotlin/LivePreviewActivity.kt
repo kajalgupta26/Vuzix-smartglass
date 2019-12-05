@@ -103,12 +103,12 @@ class LivePreviewActivity : AppCompatActivity(), OnRequestPermissionsResultCallb
             CLASSIFICATION_FLOAT
         )
         // Creating adapter for spinner
-        val dataAdapter = ArrayAdapter(this, R.layout.spinner_style, options)
+        //val dataAdapter = ArrayAdapter(this, R.layout.spinner_style, options)
         // Drop down layout style - list view with radio button
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        //dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         // attaching data adapter to spinner
-        spinner.adapter = dataAdapter
-        spinner.onItemSelectedListener = this
+        //spinner.adapter = dataAdapter
+        //spinner.onItemSelectedListener = this
 
         val facingSwitch = facingSwitch
         facingSwitch.setOnCheckedChangeListener(this)
