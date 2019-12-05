@@ -17,7 +17,6 @@ Getting Started
 - Choose LivePreviewActivity to see a demo of the following APIs:
   - Face detection
   - Text recognition (on-device)
-  - Barcode scanning
   - Image labeling (on-device)
   - Landmark recognition
   - Custom model (Labeled "Classification"). The custom model used in this
