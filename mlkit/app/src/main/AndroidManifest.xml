@@ -28,17 +28,17 @@
 
 
         <activity
-            android:name="com.google.firebase.samples.apps.mlkit.EntryChoiceActivity"
+            android:name="com.google.firebase.samples.apps.mlkit.EntryChoiceActivity">
+        </activity>
+
+
+        <activity android:name=".java.LivePreviewActivity"
             android:exported="true"
-            android:label="@string/app_name">
+            android:label="Vuzix Demo App">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-
-        <activity android:name=".java.LivePreviewActivity" android:exported="true">
         </activity>
         <service android:name="com.google.firebase.samples.apps.mlkit.java.SpeechService"></service>
 

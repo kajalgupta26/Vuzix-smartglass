@@ -166,7 +166,7 @@ public class PreferenceUtils {
         context.getString(R.string.pref_key_live_preview_automl_remote_model_choices);
     String defaultModelChoice = context.getString(R.string.pref_entries_automl_models_local);
     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-    return sharedPreferences.getString(modelChoicePrefKey, defaultModelChoice);
+    return defaultModelChoice;
   }
 
   /**

@@ -19,13 +19,18 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.util.Log;
 
 import com.google.android.gms.vision.CameraSource;
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.common.FirebaseVisionPoint;
 import com.google.firebase.ml.vision.face.FirebaseVisionFace;
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceLandmark;
+import com.google.firebase.samples.apps.mlkit.common.CameraImageGraphic;
 import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay;
 import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay.Graphic;
+import com.google.firebase.samples.apps.mlkit.common.VisionImageProcessor;
+import com.google.firebase.samples.apps.mlkit.java.automl.AutoMLImageLabelerProcessor;
 
 /**
  * Graphic instance for rendering face position, orientation, and landmarks within an associated
@@ -47,15 +52,18 @@ public class FaceGraphic extends Graphic {
     private volatile FirebaseVisionFace firebaseVisionFace;
 
     private final Bitmap overlayBitmap;
+    private final GraphicOverlay overlay;
 
-    public FaceGraphic(GraphicOverlay overlay, FirebaseVisionFace face, int facing, Bitmap overlayBitmap) {
+    public FaceGraphic(GraphicOverlay overlay, FirebaseVisionFace face, int facing, Bitmap overlayBitmap, Bitmap
+                       originalCameraImage) {
         super(overlay);
 
         firebaseVisionFace = face;
         this.facing = facing;
+        this.overlay = overlay;
         this.overlayBitmap = overlayBitmap;
         final int selectedColor = Color.WHITE;
-
+        this.originalImage = Bitmap.createScaledBitmap(originalCameraImage, overlay.getWidth(), overlay.getHeight(), true);
         facePositionPaint = new Paint();
         facePositionPaint.setColor(selectedColor);
 
@@ -123,9 +131,24 @@ public class FaceGraphic extends Graphic {
         float right = x + xOffset;
         float bottom = y + yOffset;
         canvas.drawRect(left, top, right, bottom, boxPaint);
+        //Bitmap faceBitmap = Bitmap.createBitmap(originalImage, (int) top, (int) left, (int) (right - left), (int) (bottom - top));
+        //canvas.drawBitmap(faceBitmap, 0, 0, boxPaint);
+        //        canvas.drawCircle(
+//                left,
+//                top,
+//                10f, idPaint);
+//
+//        canvas.drawCircle(
+//                translateX(face.getBoundingBox().exactCenterX()),
+//                translateY(face.getBoundingBox().exactCenterY()),
+//                10f, idPaint);
+//
+//        canvas.drawCircle(
+//                right,
+//                bottom,
+//                10f, idPaint);
 
         // draw landmarks
-        //drawLandmarkPosition(canvas, face, FirebaseVisionFaceLandmark.MOUTH_BOTTOM);
         //drawLandmarkPosition(canvas, face, FirebaseVisionFaceLandmark.LEFT_CHEEK);
         //drawLandmarkPosition(canvas, face, FirebaseVisionFaceLandmark.LEFT_EAR);
         //drawLandmarkPosition(canvas, face, FirebaseVisionFaceLandmark.MOUTH_LEFT);
@@ -171,4 +194,6 @@ public class FaceGraphic extends Graphic {
         }
 
     }
+    private VisionImageProcessor frameProcessor;
+    Bitmap originalImage;
 }

@@ -14,26 +14,26 @@ public class LabelGraphic extends GraphicOverlay.Graphic {
   private final Paint textPaint;
   private final GraphicOverlay overlay;
 
-  private final List<FirebaseVisionImageLabel> labels;
 
-  public LabelGraphic(GraphicOverlay overlay, List<FirebaseVisionImageLabel> labels) {
+  public LabelGraphic(GraphicOverlay overlay, String labels, float conf, float x, float y) {
     super(overlay);
     this.overlay = overlay;
-    this.labels = labels;
     textPaint = new Paint();
-    textPaint.setColor(Color.RED);
-    textPaint.setTextSize(70.0f);
+    textPaint.setColor(Color.WHITE);
+    textPaint.setTextSize(35.0f);
+    minConf = conf;
+    text = labels;
+    this.x = x;
+    this.y = y;
     postInvalidate();
   }
 
   @Override
   public synchronized void draw(Canvas canvas) {
-    float x = overlay.getWidth() / 4.0f;
-    float y = overlay.getHeight() / 2.0f;
-
-    for (FirebaseVisionImageLabel label : labels) {
-      canvas.drawText(label.getText() + ": " + label.getConfidence(), x, y, textPaint);
-      y = y - 72.0f;
-    }
+    canvas.drawText(text , x, y, textPaint);
   }
+
+  float minConf = 0;
+  String text = "";
+  float x, y;
 }

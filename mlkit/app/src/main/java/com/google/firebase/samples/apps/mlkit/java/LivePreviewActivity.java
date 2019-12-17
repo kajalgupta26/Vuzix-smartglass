@@ -392,8 +392,13 @@ public final class LivePreviewActivity extends AppCompatActivity
         stopVoiceRecorder();
 
         // Stop Cloud Speech API
-        mSpeechService.removeListener(mSpeechServiceListener);
-        unbindService(mServiceConnection);
+        try{
+            mSpeechService.removeListener(mSpeechServiceListener);
+            unbindService(mServiceConnection);
+        }
+        catch (Exception e) {
+
+        }
         mSpeechService = null;
 
         super.onStop();

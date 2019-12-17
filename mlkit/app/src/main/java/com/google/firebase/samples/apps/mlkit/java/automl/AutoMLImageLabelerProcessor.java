@@ -6,8 +6,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.util.Log;
 
-import android.widget.Toast;
-
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -21,8 +19,6 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
 import com.google.firebase.ml.vision.label.FirebaseVisionOnDeviceAutoMLImageLabelerOptions;
-import com.google.firebase.samples.apps.mlkit.R;
-import com.google.firebase.samples.apps.mlkit.common.CameraImageGraphic;
 import com.google.firebase.samples.apps.mlkit.common.FrameMetadata;
 import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay;
 import com.google.firebase.samples.apps.mlkit.java.VisionProcessorBase;
@@ -59,8 +55,8 @@ public class AutoMLImageLabelerProcessor
     this.context = context;
     this.mode = mode;
 
-    String modelChoice = PreferenceUtils.getAutoMLRemoteModelChoice(context);
-    if (modelChoice.equals(context.getString(R.string.pref_entries_automl_models_local))) {
+    //String modelChoice = PreferenceUtils.getAutoMLRemoteModelChoice(context);
+    if (true) {//(modelChoice.equals(context.getString(R.string.pref_entries_automl_models_local))) {
       Log.d(TAG, "Local model used.");
       FirebaseAutoMLLocalModel localModel =
           new FirebaseAutoMLLocalModel.Builder().setAssetFilePath("automl/manifest.json").build();
@@ -89,6 +85,11 @@ public class AutoMLImageLabelerProcessor
                       .setConfidenceThreshold(0)
                       .build());
     }
+  }
+
+  public List<FirebaseVisionImageLabel> getLabels()
+  {
+      return labels;
   }
 
   @Override
@@ -129,14 +130,25 @@ public class AutoMLImageLabelerProcessor
       @NonNull List<FirebaseVisionImageLabel> labels,
       @NonNull FrameMetadata frameMetadata,
       @NonNull GraphicOverlay graphicOverlay) {
-    graphicOverlay.clear();
-    if (originalCameraImage != null) {
-      CameraImageGraphic imageGraphic = new CameraImageGraphic(graphicOverlay, originalCameraImage);
-      graphicOverlay.add(imageGraphic);
+//    graphicOverlay.clear();
+//    if (originalCameraImage != null) {
+//      CameraImageGraphic imageGraphic = new CameraImageGraphic(graphicOverlay, originalCameraImage);
+//      graphicOverlay.add(imageGraphic);
+//    }
+    this.labels = labels;
+    float minConf = 0;
+    String text = "";
+    for (FirebaseVisionImageLabel label : labels) {
+      if (minConf <= label.getConfidence())
+      {
+        minConf = label.getConfidence();
+        text = label.getText();
+      }
     }
-    LabelGraphic labelGraphic = new LabelGraphic(graphicOverlay, labels);
-    graphicOverlay.add(labelGraphic);
-    graphicOverlay.postInvalidate();
+
+    //LabelGraphic labelGraphic = new LabelGraphic(graphicOverlay, text, minConf);
+    //graphicOverlay.add(labelGraphic);
+    //graphicOverlay.postInvalidate();
   }
 
   @Override
@@ -151,9 +163,11 @@ public class AutoMLImageLabelerProcessor
     } else {
       String downloadingError = "Error downloading remote model.";
       Log.e(TAG, downloadingError, modelDownloadingTask.getException());
-      Toast.makeText(context, downloadingError, Toast.LENGTH_SHORT).show();
+      //Toast.makeText(context, downloadingError, Toast.LENGTH_SHORT).show();
       return Tasks.forException(
           new Exception("Failed to download remote model.", modelDownloadingTask.getException()));
     }
   }
+
+  List<FirebaseVisionImageLabel> labels;
 }

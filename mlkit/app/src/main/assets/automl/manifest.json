@@ -1,5 +1,5 @@
 {
-  "modelType": "IMAGE_LABELING",
   "modelFile": "model.tflite",
-  "labelsFile": "dict.txt"
+  "labelsFile": "dict.txt",
+  "modelType": "IMAGE_LABELING"
 }

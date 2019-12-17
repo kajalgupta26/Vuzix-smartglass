@@ -20,21 +20,34 @@ import android.hardware.Camera;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.util.Log;
-
+import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.ml.common.FirebaseMLException;
 import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.automl.FirebaseAutoMLLocalModel;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.face.FirebaseVisionFace;
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector;
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions;
+import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
+import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
+import com.google.firebase.ml.vision.label.FirebaseVisionOnDeviceAutoMLImageLabelerOptions;
 import com.google.firebase.samples.apps.mlkit.R;
 import com.google.firebase.samples.apps.mlkit.common.CameraImageGraphic;
 import com.google.firebase.samples.apps.mlkit.common.FrameMetadata;
 import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay;
+import com.google.firebase.samples.apps.mlkit.common.VisionImageProcessor;
 import com.google.firebase.samples.apps.mlkit.java.VisionProcessorBase;
+import com.google.firebase.samples.apps.mlkit.java.automl.AutoMLImageLabelerProcessor;
+import com.google.firebase.samples.apps.mlkit.java.labeldetector.LabelGraphic;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+
+import static java.lang.Math.abs;
 
 /**
  * Face Detector Demo.
@@ -52,6 +65,7 @@ public class FaceDetectionProcessor extends VisionProcessorBase<List<FirebaseVis
                 new FirebaseVisionFaceDetectorOptions.Builder()
                         .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
                         .setLandmarkMode(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
+                        .enableTracking()
                         .build();
 
         detector = FirebaseVision.getInstance().getVisionFaceDetector(options);
@@ -78,20 +92,72 @@ public class FaceDetectionProcessor extends VisionProcessorBase<List<FirebaseVis
             @Nullable Bitmap originalCameraImage,
             @NonNull List<FirebaseVisionFace> faces,
             @NonNull FrameMetadata frameMetadata,
-            @NonNull GraphicOverlay graphicOverlay) {
+            @NonNull final GraphicOverlay graphicOverlay) {
         graphicOverlay.clear();
         if (originalCameraImage != null) {
             CameraImageGraphic imageGraphic = new CameraImageGraphic(graphicOverlay, originalCameraImage);
-            graphicOverlay.add(imageGraphic);
+            //graphicOverlay.add(imageGraphic);// here for removing the overlay
         }
         for (int i = 0; i < faces.size(); ++i) {
             FirebaseVisionFace face = faces.get(i);
-
-            int cameraFacing =
-                    frameMetadata != null ? frameMetadata.getCameraFacing() :
-                            Camera.CameraInfo.CAMERA_FACING_BACK;
-            FaceGraphic faceGraphic = new FaceGraphic(graphicOverlay, face, cameraFacing, overlayBitmap);
-            graphicOverlay.add(faceGraphic);
+            final int faceId = face.getTrackingId();
+            float x = (face.getBoundingBox().centerX());
+            float y = face.getBoundingBox().centerY();
+            float xOffset = face.getBoundingBox().width() / 2.0f;
+            float yOffset = face.getBoundingBox().height() / 2.0f;
+            final float left = x - xOffset;
+            final float top = y - yOffset;
+            final float right = x + xOffset;
+            float bottom = y + yOffset;
+            if (faceLabelMap.containsKey(faceId))
+            {
+                String label = faceLabelMap.get(faceId);
+                Log.d("kajal",String.valueOf(faceId) + " " + label);
+                LabelGraphic labelGraphic = new LabelGraphic(graphicOverlay, label, 0, (right - left)/2, 50);
+                graphicOverlay.add(labelGraphic);
+            }
+            else {
+                try {
+                    Bitmap faceBitmap = Bitmap.createBitmap(originalCameraImage, (int) left, (int) top, (int) (right - left), (int) (bottom - top));
+                    float ratio = abs((right - left)/(bottom - top));
+                    // scale bitmap a bit
+                    faceBitmap = Bitmap.createScaledBitmap(faceBitmap, (int) (50*ratio), 50, true);
+                    FirebaseVisionImage img = FirebaseVisionImage.fromBitmap(faceBitmap);
+                    detectorLabel.processImage(img)
+                            .addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
+                                @Override
+                                public void onSuccess(List<FirebaseVisionImageLabel> labels) {
+                                    float minConf = 0;
+                                    String text = "";
+                                    for (FirebaseVisionImageLabel label : labels) {
+                                        if (minConf <= label.getConfidence()) {
+                                            minConf = label.getConfidence();
+                                            text = label.getText();
+                                        }
+                                    }
+                                    Log.d("kajal","putting: " + String.valueOf(faceId) + " " + text);
+                                    faceLabelMap.put(faceId, text);
+                                    LabelGraphic labelGraphic = new LabelGraphic(graphicOverlay, text, minConf, (right - left)/2, 50);
+                                    graphicOverlay.add(labelGraphic);
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Log.d("Kajal", "Label detection failed in autoML");
+                                }
+                            });
+                }
+                catch (Exception e)
+                {
+                    Log.d("kajal", e.toString());
+                }
+            }
+//            int cameraFacing =
+//                    frameMetadata != null ? frameMetadata.getCameraFacing() :
+//                            Camera.CameraInfo.CAMERA_FACING_BACK;
+//            FaceGraphic faceGraphic = new FaceGraphic(graphicOverlay, face, cameraFacing, overlayBitmap, originalCameraImage);
+//            graphicOverlay.add(faceGraphic);
         }
         graphicOverlay.postInvalidate();
     }
@@ -100,4 +166,31 @@ public class FaceDetectionProcessor extends VisionProcessorBase<List<FirebaseVis
     protected void onFailure(@NonNull Exception e) {
         Log.e(TAG, "Face detection failed " + e);
     }
+
+    private VisionImageProcessor frameProcessor;
+
+    {
+        try {
+            frameProcessor = new AutoMLImageLabelerProcessor(null, AutoMLImageLabelerProcessor.Mode.LIVE_PREVIEW);
+        } catch (FirebaseMLException e) {
+            Log.e("Kajal", "Failed to initialize automl" + e);
+            e.printStackTrace();
+        }
+    };
+
+    FirebaseAutoMLLocalModel localModel = new FirebaseAutoMLLocalModel.Builder().setAssetFilePath("automl/manifest.json").build();
+
+    {
+        try {
+            detectorLabel = FirebaseVision.getInstance().getOnDeviceAutoMLImageLabeler(
+                                new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(localModel)
+                                        .setConfidenceThreshold(0)
+                                        .build());
+        } catch (FirebaseMLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private FirebaseVisionImageLabeler detectorLabel;
+    HashMap<Integer, String> faceLabelMap = new HashMap();
 }
