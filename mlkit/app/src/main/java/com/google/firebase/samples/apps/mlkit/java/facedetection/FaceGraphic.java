@@ -19,7 +19,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.os.Build;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
 
 import com.google.android.gms.vision.CameraSource;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
@@ -31,6 +34,8 @@ import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay;
 import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay.Graphic;
 import com.google.firebase.samples.apps.mlkit.common.VisionImageProcessor;
 import com.google.firebase.samples.apps.mlkit.java.automl.AutoMLImageLabelerProcessor;
+
+import static java.lang.Float.max;
 
 /**
  * Graphic instance for rendering face position, orientation, and landmarks within an associated
@@ -80,6 +85,9 @@ public class FaceGraphic extends Graphic {
     /**
      * Draws the face annotations for position on the supplied canvas.
      */
+
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void draw(Canvas canvas) {
         FirebaseVisionFace face = firebaseVisionFace;
@@ -126,10 +134,10 @@ public class FaceGraphic extends Graphic {
         // Draws a bounding box around the face.
         float xOffset = scaleX(face.getBoundingBox().width() / 2.0f);
         float yOffset = scaleY(face.getBoundingBox().height() / 2.0f);
-        float left = x - xOffset;
-        float top = y - yOffset;
-        float right = x + xOffset;
-        float bottom = y + yOffset;
+        float left = translateForVuzix(x - xOffset, false);
+        float top = translateForVuzix(y - yOffset, true);
+        float right = translateForVuzix(x + xOffset, false);
+        float bottom = translateForVuzix(y + yOffset, true);
         canvas.drawRect(left, top, right, bottom, boxPaint);
         //Bitmap faceBitmap = Bitmap.createBitmap(originalImage, (int) top, (int) left, (int) (right - left), (int) (bottom - top));
         //canvas.drawBitmap(faceBitmap, 0, 0, boxPaint);

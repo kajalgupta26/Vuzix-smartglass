@@ -305,6 +305,7 @@ public final class LivePreviewActivity extends AppCompatActivity
         super.onResume();
         Log.d(TAG, "onResume");
         startCameraSource();
+        //stopVoiceRecorder();
     }
 
     /**

@@ -23,8 +23,8 @@ public class LabelGraphic extends GraphicOverlay.Graphic {
     textPaint.setTextSize(35.0f);
     minConf = conf;
     text = labels;
-    this.x = x;
-    this.y = y;
+    this.x = translateForVuzix(translateX(x), false);
+    this.y = translateForVuzix(translateY(y), true);
     postInvalidate();
   }
 

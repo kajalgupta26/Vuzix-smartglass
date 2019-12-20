@@ -15,8 +15,11 @@ package com.google.firebase.samples.apps.mlkit.common;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
+
+import androidx.annotation.RequiresApi;
 
 import com.google.android.gms.vision.CameraSource;
 
@@ -104,6 +107,18 @@ public class GraphicOverlay extends View {
       } else {
         return scaleX(x);
       }
+    }
+
+    public float translateForVuzix(float xv, boolean isY)
+    {
+      return xv;
+//      float t = 100;
+//      if(isY)
+//        t = 200;
+//      xv = xv - t;
+//      if(xv < 0)
+//        xv = 0;
+//      return xv;
     }
 
     /**

@@ -411,8 +411,8 @@ public class CameraSource {
     SizePair(
         Camera.Size previewSize,
         @Nullable Camera.Size pictureSize) {
-      //preview = new Size(previewSize.width, previewSize.height);
-      preview = new Size(480, 480);
+      preview = new Size(previewSize.width, previewSize.height);
+      //preview = new Size(480, 480);
       picture = pictureSize != null ? new Size(pictureSize.width, pictureSize.height) : null;
     }
 

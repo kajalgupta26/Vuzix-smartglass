@@ -96,7 +96,7 @@ public class FaceDetectionProcessor extends VisionProcessorBase<List<FirebaseVis
         graphicOverlay.clear();
         if (originalCameraImage != null) {
             CameraImageGraphic imageGraphic = new CameraImageGraphic(graphicOverlay, originalCameraImage);
-            //graphicOverlay.add(imageGraphic);// here for removing the overlay
+            graphicOverlay.add(imageGraphic);// here for removing the overlay
         }
         for (int i = 0; i < faces.size(); ++i) {
             FirebaseVisionFace face = faces.get(i);
@@ -108,12 +108,13 @@ public class FaceDetectionProcessor extends VisionProcessorBase<List<FirebaseVis
             final float left = x - xOffset;
             final float top = y - yOffset;
             final float right = x + xOffset;
-            float bottom = y + yOffset;
+            final float bottom = y + yOffset;
+            final int j = i;
             if (faceLabelMap.containsKey(faceId))
             {
                 String label = faceLabelMap.get(faceId);
                 Log.d("kajal",String.valueOf(faceId) + " " + label);
-                LabelGraphic labelGraphic = new LabelGraphic(graphicOverlay, label, 0, (right - left)/2, 50);
+                LabelGraphic labelGraphic = new LabelGraphic(graphicOverlay, label, 0, left, (i%2 == 0) ? top: bottom);
                 graphicOverlay.add(labelGraphic);
             }
             else {
@@ -130,6 +131,7 @@ public class FaceDetectionProcessor extends VisionProcessorBase<List<FirebaseVis
                                     float minConf = 0;
                                     String text = "";
                                     for (FirebaseVisionImageLabel label : labels) {
+                                        Log.d("kajal",label.getConfidence() + " : " + label.getText());
                                         if (minConf <= label.getConfidence()) {
                                             minConf = label.getConfidence();
                                             text = label.getText();
@@ -137,7 +139,7 @@ public class FaceDetectionProcessor extends VisionProcessorBase<List<FirebaseVis
                                     }
                                     Log.d("kajal","putting: " + String.valueOf(faceId) + " " + text);
                                     faceLabelMap.put(faceId, text);
-                                    LabelGraphic labelGraphic = new LabelGraphic(graphicOverlay, text, minConf, (right - left)/2, 50);
+                                    LabelGraphic labelGraphic = new LabelGraphic(graphicOverlay, text, minConf, left, (j%2 == 0) ? top: bottom);
                                     graphicOverlay.add(labelGraphic);
                                 }
                             })
@@ -153,11 +155,11 @@ public class FaceDetectionProcessor extends VisionProcessorBase<List<FirebaseVis
                     Log.d("kajal", e.toString());
                 }
             }
-//            int cameraFacing =
-//                    frameMetadata != null ? frameMetadata.getCameraFacing() :
-//                            Camera.CameraInfo.CAMERA_FACING_BACK;
-//            FaceGraphic faceGraphic = new FaceGraphic(graphicOverlay, face, cameraFacing, overlayBitmap, originalCameraImage);
-//            graphicOverlay.add(faceGraphic);
+            int cameraFacing =
+                    frameMetadata != null ? frameMetadata.getCameraFacing() :
+                            Camera.CameraInfo.CAMERA_FACING_BACK;
+            FaceGraphic faceGraphic = new FaceGraphic(graphicOverlay, face, cameraFacing, overlayBitmap, originalCameraImage);
+            graphicOverlay.add(faceGraphic);
         }
         graphicOverlay.postInvalidate();
     }
