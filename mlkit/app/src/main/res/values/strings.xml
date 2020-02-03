@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+  <string name="vuzix_group_id">d929942f-7fd4-40e0-806e-b0de919b497f</string>
+  <string name="vuzix_group_name">vuzix</string>
+
   <string name="app_name">Firebase ML Kit Demo</string>
   <string name="ok">OK</string>
   <string name="permission_camera_rationale">Access to the camera is needed for detection</string>

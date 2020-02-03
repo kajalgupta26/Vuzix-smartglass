@@ -60,10 +60,12 @@ import com.google.firebase.samples.apps.mlkit.java.custommodel.CustomImageClassi
 import com.google.firebase.samples.apps.mlkit.java.facedetection.FaceContourDetectorProcessor;
 import com.google.firebase.samples.apps.mlkit.java.facedetection.FaceDetectionProcessor;
 import com.google.firebase.samples.apps.mlkit.java.imagelabeling.ImageLabelingProcessor;
+import com.google.firebase.samples.apps.mlkit.java.msapi.MSFaceRecognitionProcessor;
 import com.google.firebase.samples.apps.mlkit.java.objectdetection.ObjectDetectorProcessor;
 import com.google.firebase.samples.apps.mlkit.common.preference.SettingsActivity;
 import com.google.firebase.samples.apps.mlkit.common.preference.SettingsActivity.LaunchSource;
 import com.google.firebase.samples.apps.mlkit.java.textrecognition.TextRecognitionProcessor;
+import com.microsoft.projectoxford.face.FaceServiceRestClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -82,6 +84,7 @@ public final class LivePreviewActivity extends AppCompatActivity
     private static final String OBJECT_DETECTION = "Object Detection";
     private static final String AUTOML_IMAGE_LABELING = "AutoML Vision Edge";
     private static final String TEXT_DETECTION = "Text Detection";
+    private static final String MSAPI_DETECTION = "MSAPI Detection";
     private static final String BARCODE_DETECTION = "Barcode Detection";
     private static final String IMAGE_LABEL_DETECTION = "Label Detection";
     private static final String CLASSIFICATION_QUANT = "Classification (quantized)";
@@ -93,7 +96,7 @@ public final class LivePreviewActivity extends AppCompatActivity
     private CameraSource cameraSource = null;
     private CameraSourcePreview preview;
     private GraphicOverlay graphicOverlay;
-    private String selectedModel = FACE_DETECTION;
+    private String selectedModel = MSAPI_DETECTION;
 
     @Override
     protected void onStart() {
@@ -109,7 +112,13 @@ public final class LivePreviewActivity extends AppCompatActivity
         Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_live_preview);
         getApplicationContext().bindService(new Intent(this, SpeechService.class), mServiceConnection, BIND_AUTO_CREATE);
-
+        try{
+            sFaceServiceClient = new FaceServiceRestClient(getString(R.string.endpoint), getString(R.string.subscription_key));
+        }
+        catch (Exception e)
+        {
+            Log.e("why fail", e.toString());
+        }
         final Resources resources = getResources();
         final Resources.Theme theme = getTheme();
         mColorHearing = ResourcesCompat.getColor(resources, R.color.status_hearing, theme);
@@ -130,15 +139,15 @@ public final class LivePreviewActivity extends AppCompatActivity
 
         Spinner spinner = findViewById(R.id.spinner);
         List<String> options = new ArrayList<>();
-        options.add(FACE_CONTOUR);
-        options.add(FACE_DETECTION);
-        options.add(AUTOML_IMAGE_LABELING);
-        options.add(OBJECT_DETECTION);
-        options.add(TEXT_DETECTION);
-        options.add(BARCODE_DETECTION);
-        options.add(IMAGE_LABEL_DETECTION);
-        options.add(CLASSIFICATION_QUANT);
-        options.add(CLASSIFICATION_FLOAT);
+        options.add(MSAPI_DETECTION);
+//        options.add(FACE_DETECTION);
+//        options.add(AUTOML_IMAGE_LABELING);
+//        options.add(OBJECT_DETECTION);
+//        options.add(TEXT_DETECTION);
+//        options.add(BARCODE_DETECTION);
+//        options.add(IMAGE_LABEL_DETECTION);
+//        options.add(CLASSIFICATION_QUANT);
+//        options.add(CLASSIFICATION_FLOAT);
         // Creating adapter for spinner
 //        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, R.layout.spinner_style,
 //                options);
@@ -224,6 +233,10 @@ public final class LivePreviewActivity extends AppCompatActivity
 
         try {
             switch (model) {
+                case MSAPI_DETECTION:
+                    Log.i(TAG, "Using MSAPI Face Recognition Processor");
+                    cameraSource.setMachineLearningFrameProcessor(new MSFaceRecognitionProcessor(getResources(), sFaceServiceClient));
+                    break;
                 case CLASSIFICATION_QUANT:
                     Log.i(TAG, "Using Custom Image Classifier (quant) Processor");
                     cameraSource.setMachineLearningFrameProcessor(new CustomImageClassifierProcessor(this, true));
@@ -513,4 +526,5 @@ public final class LivePreviewActivity extends AppCompatActivity
     private SpeechService mSpeechService;
 
     private VoiceRecorder mVoiceRecorder;
+    private static FaceServiceRestClient sFaceServiceClient;
 }

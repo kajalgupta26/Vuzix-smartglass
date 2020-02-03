@@ -78,7 +78,7 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
                 graphicOverlay);
     }
 
-    private synchronized void processLatestImage(final GraphicOverlay graphicOverlay) {
+    protected synchronized void processLatestImage(final GraphicOverlay graphicOverlay) {
         processingImage = latestImage;
         processingMetaData = latestImageMetaData;
         latestImage = null;
@@ -105,7 +105,7 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
                 graphicOverlay);
     }
 
-    private void detectInVisionImage(
+    protected void detectInVisionImage(
             final Bitmap originalCameraImage,
             FirebaseVisionImage image,
             final FrameMetadata metadata,

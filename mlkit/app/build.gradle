@@ -8,11 +8,11 @@ ext {
 }
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 28
     defaultConfig {
         applicationId "com.google.firebase.samples.apps.mlkit"
-        minSdkVersion 21
-        targetSdkVersion 29
+        minSdkVersion 28
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -35,6 +35,10 @@ android {
     packagingOptions {
         exclude 'META-INF/androidx.exifinterface_exifinterface.version'
         exclude 'META-INF/proguard/androidx-annotations.pro'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -96,6 +100,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-ml-vision-object-detection-model:19.0.3'
     // AutoML model
     implementation 'com.google.firebase:firebase-ml-vision-automl:18.0.3'
+    implementation 'com.microsoft.projectoxford:face:1.4.4'
 
     testImplementation 'junit:junit:4.12'
     implementation 'io.grpc:grpc-okhttp:1.21.0'
